@@ -1,0 +1,38 @@
+from flask import Flask, request, jsonify
+import google.generativeai as genai
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)  # Enables CORS for frontend communication
+
+GEMINI_API_KEY = "AIzaSyCaWK5x_hqMSiOoscT1sKpmulbOplmZFv0"
+genai.configure(api_key=GEMINI_API_KEY)
+
+@app.route("/", methods=["GET"])
+def home():
+    return "Flask is running!"
+
+@app.route("/get_plant_benefits", methods=["GET"])
+def get_plant_benefits():
+    plant_name = request.args.get("plant")  # Get plant name from request
+
+    if not plant_name:
+        return jsonify({"error": "No plant name provided"}), 400
+    
+    prompt = f"What are the medicinal benefits of {plant_name}? List its uses in treating diseases."
+
+    try:
+        #  Correct Model Initialization for Gemini API
+        model = genai.GenerativeModel(model_name="gemini-1.5-pro")  #  Ensure this matches the available models
+        response = model.generate_content(prompt)
+
+        if response and response.text:
+            return jsonify({"benefits": response.text})
+        else:
+            return jsonify({"error": "Failed to get plant benefits"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == "__main__":
+    app.run(debug=True, host="0.0.0.0", port=5000)
+

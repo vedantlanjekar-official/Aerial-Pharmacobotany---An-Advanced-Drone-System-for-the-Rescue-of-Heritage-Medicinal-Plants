@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medicinal Plant Benefits</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-image: url(background.png);
+            background-size: cover;
+            background-position: center;
+            background-repeat: repeat; /* Changed from 'no-repeat' to 'repeat' based on original code */
+            background-attachment: fixed;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* Removed justify-content: center to allow elements to align based on other rules */
+            min-height: 100vh;
+            transition: background-color 0.3s ease;
+            padding-bottom: 50px; /* Added padding to prevent content overlap with bottom */
+        }
+
+        /* Black screen overlay for the start animation */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: curvedWipeIn 3s ease-out forwards;
+        }
+
+        @keyframes curvedWipeIn {
+            0% { clip-path: circle(150% at top left); }
+            100% { clip-path: circle(0% at bottom left); display: none; } /* Ensure it hides */
+        }
+
+        /* Drone animation */
+        #drone {
+            position: fixed;
+            bottom: -100px;
+            right: -100px;
+            width: 250px;
+            height: auto;
+            z-index: 10000; /* Ensure drone is on top */
+            animation: droneFly 2s cubic-bezier(0, 0, 1, 1);
+            display: none; /* Start hidden until needed (Optional, depends on desired effect) */
+            overflow: hidden;
+        }
+
+        #drone img {
+            width: 100%; /* Make the image fill the width of the parent div */
+            height: auto; /* Maintain aspect ratio */
+            display: block; /* Prevent extra space below the image */
+        }
+
+        @keyframes droneFly {
+            0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+            5% { transform: translate(-5vw, -15vh) rotate(10deg); opacity: 1; }
+            15% { transform: translate(-15vw, -35vh) rotate(30deg); opacity: 1; }
+            25% { transform: translate(-30vw, -48vh) rotate(45deg); opacity: 1; }
+            35% { transform: translate(-42vw, -52vh) rotate(25deg); opacity: 1; }
+            50% { transform: translate(-50vw, -50vh) rotate(0deg); opacity: 1; } /* Center */
+            65% { transform: translate(-58vw, -48vh) rotate(-10deg); opacity: 1; }
+            75% { transform: translate(-70vw, -35vh) rotate(-25deg); opacity: 1; }
+            85% { transform: translate(-85vw, -15vh) rotate(-45deg); opacity: 1; }
+            95% { transform: translate(-95vw, -5vh) rotate(-30deg); opacity: 1; }
+            100% { transform: translate(-100vw, 0) rotate(0deg); opacity: 0; } /* Bottom Left */
+        }
+
+
+        header {
+            background-color: #4CAF50;
+            color: rgb(0, 0, 0); /* Black text as per original */
+            padding: 1.5em 0;
+            text-align: center;
+            width: 100%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px; /* Added margin below header */
+        }
+
+        /* Container for the initial upload and button */
+        #initial-interaction-container {
+             display: flex;
+             flex-direction: column; /* Stack elements vertically */
+             align-items: center; /* Center items horizontally */
+             width: 100%; /* Take full width to allow centering */
+             margin-top: 30px; /* Space from header */
+        }
+
+         /* Combined container for upload and button for easier positioning initially */
+        #upload-button-wrapper {
+            display: flex;
+            align-items: flex-start; /* Align items to the top */
+            justify-content: center; /* Center the items horizontally */
+            width: 90%; /* Adjust width as needed */
+            max-width: 1200px; /* Max width for larger screens */
+            gap: 50px; /* Space between upload box and button */
+            margin-top: 30px; /* Space from header */
+            position: relative; /* Needed for absolute positioning of button if required */
+        }
+
+
+        #upload-container {
+            background-color: rgb(182, 178, 178);
+            padding: 1.5em;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            width: 60vh; /* Adjusted width */
+            height: 60vh; /* Adjusted height */
+            display: flex;
+            flex-direction: column; /* Stack items inside vertically */
+            justify-content: center; /* Center items vertically */
+            align-items: center; /* Center items horizontally */
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease; /* Added background-color transition */
+            border: 2px dashed #4CAF50;
+            /* align-self: flex-start; Removed to allow centering */
+            box-sizing: border-box; /* Include padding and border in element's total width and height */
+        }
+
+        #upload-container.dragover {
+            background-color: #e8f5e9; /* Highlight on drag over */
+        }
+
+        #upload-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        input[type="file"] {
+            margin-top: 20px; /* Added margin for spacing */
+            margin-bottom: 1.5em;
+            padding: 1em;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            width: 90%; /* Relative width */
+            max-width: 300px; /* Max width */
+            cursor: pointer;
+        }
+
+        #recognize-button {
+            background-color: #4CAF50;
+            color: white;
+            margin-top: 1%;
+            border: none;
+            border-radius: 50%; /* Circle */
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease; /* Added box-shadow transition */
+            font-size: 1em;
+            width: 400px; /* Adjusted size */
+            height: 400px; /* Adjusted size */
+            display: flex;
+            flex-direction: column;
+            font-size: 24px; /* Adjusted font size */
+            justify-content: center;
+            align-items: center;
+            text-align: center; /* Ensure text inside is centered */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* Add initial shadow */
+            padding: 10px; /* Add padding to prevent text overflow */
+            box-sizing: border-box; /* Include padding in element's total width and height */
+            line-height: 1.3; /* Adjust line height for better text spacing */
+        }
+
+        #recognize-button:hover {
+            background-color: #45a049;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+            transform: scale(1.03); /* Slight scale effect on hover */
+        }
+
+        .arrow {
+            font-size: 100px; /* Adjusted size */
+            color: white;
+            margin-top: 5px; /* Adjusted spacing */
+        }
+
+        /* Container for the results */
+        #main-display-container {
+            display: none; /* Initially hidden */
+            flex-direction: row; /* Align image and info side-by-side */
+            justify-content: center; /* Center the content horizontally */
+            align-items: flex-start; /* Align items to the top */
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            gap: 30px; /* Space between image and info */
+            margin-top: 50px; /* Space from header/previous content */
+            width: 90%;
+            max-width: 1200px; /* Max width */
+            background-color: rgba(180, 235, 196, 0.980); /* Semi-transparent white background */
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        #image-container {
+            width: 300px;
+            height: 300px;
+            border: 2px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f9f9f9; /* Light background for the image area */
+            border-radius: 8px;
+            overflow: hidden; /* Hide parts of image that might overflow */
+            flex-shrink: 0; /* Prevent shrinking */
+        }
+
+        #image-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover; /* Cover the area, might crop */
+        }
+
+        #info-container {
+            /* width: 50%; - Let flexbox handle width */
+            flex-grow: 1; /* Allow info container to take remaining space */
+            min-width: 300px; /* Minimum width before wrapping */
+            text-align: left;
+            padding: 0 20px; /* Add padding for spacing */
+        }
+
+        #info-container h2 {
+            margin-top: 0;
+            color: #000000;
+        }
+
+         #info-container p, #info-container div {
+            margin-bottom: 1em; /* Space between paragraphs/sections */
+            line-height: 1.6; /* Improve readability */
+            color: #1a1a1a;
+        }
+
+        #info-container ul {
+            list-style-type: disc;
+            padding-left: 20px;
+            margin-bottom: 1em;
+        }
+
+        #info-container a {
+            color: #4cab4f;
+            text-decoration: none;
+            font-weight: bold;
+        }
+         #info-container a:hover {
+            text-decoration: underline;
+        }
+
+         #plant-benefits h3 {
+            color: #4CAF50;
+            margin-bottom: 0.5em;
+         }
+
+
+         /* Responsive adjustments */
+        @media (max-width: 768px) {
+             #upload-button-wrapper {
+                 flex-direction: column; /* Stack vertically on smaller screens */
+                 align-items: center; /* Center items when stacked */
+                 gap: 30px; /* Adjust gap for vertical layout */
+             }
+
+            #upload-container {
+                width: 80vw;
+                height: auto; /* Adjust height based on content */
+                min-height: 30vh; /* Minimum height */
+            }
+
+            #recognize-button {
+                width: 200px; /* Smaller button */
+                height: 200px; /* Smaller button */
+                font-size: 18x; /* Adjust font size */
+            }
+             .arrow {
+                font-size: 70px; /* Adjust arrow size */
+             }
+
+             #main-display-container {
+                 flex-direction: column; /* Stack image and info vertically */
+                 align-items: center; /* Center items */
+             }
+
+             #image-container {
+                 width: 80%;
+                 max-width: 250px;
+                 height: auto; /* Adjust height */
+                 margin-bottom: 20px; /* Space below image */
+             }
+
+             #info-container {
+                 width: 90%; /* Take more width */
+                 min-width: unset; /* Remove min-width */
+                 padding: 0; /* Remove horizontal padding */
+                 text-align: center; /* Center text on small screens */
+             }
+             #info-container p, #info-container div {
+                 text-align: left; /* Keep text left-aligned within the centered container */
+             }
+             #info-container ul {
+                 display: inline-block; /* Center the list block */
+                 text-align: left; /* Align list items left */
+             }
+
+        }
+         @media (max-width: 480px) {
+             header h1 {
+                 font-size: 1.5em; /* Smaller header text */
+             }
+             #recognize-button {
+                width: 150px;
+                height: 150px;
+                font-size: 10px;
+             }
+              .arrow {
+                font-size: 50px;
+              }
+         }
+
+
+    </style>
+</head>
+<body>
+    
+    <header>
+        <h1>🌱 AERIAL PHARMACOBOTANY 🌱</h1>
+    </header>
+
+    <div id="initial-interaction-container">
+        <div id="upload-button-wrapper">
+             <div id="upload-container">
+                 <p>Drag & Drop an Image or</p>
+                 <input type="file" id="image-upload" accept="image/*">
+                 <p>Select a file</p>
+             </div>
+             <button id="recognize-button">Recognize the Plant
+                 <span>& Get its Benefits</span>
+                 <span class="arrow">&#8594;</span>
+             </button>
+         </div>
+    </div>
+
+    <div id="loading-screen"></div>
+    <div id="drone">
+        <img src="done-removebg-preview.png" alt="Drone img">
+    </div>
+
+    <div id="main-display-container"> <div id="image-container">
+            <img id="plant-image" src="" alt="Plant Image">
+        </div>
+        <div id="info-container">
+            <h2 id="plant-name"></h2>
+            <p id="common-names"></p>
+            <div id="wiki-description"></div> <pre id="taxonomy"></pre> <p id="synonyms"></p>
+            <p id="edible-parts"></p>
+            <p id="propagation"></p>
+            <p id="plant-url"></p>
+            <div id="plant-benefits"></div>
+        </div>
+    </div>
+
+    <script>
+        // Elements
+        const recognizeButton = document.getElementById('recognize-button');
+        const imageUpload = document.getElementById('image-upload');
+        const initialInteractionContainer = document.getElementById('initial-interaction-container'); // Target the wrapper
+        const loadingScreen = document.getElementById('loading-screen');
+        const drone = document.getElementById('drone');
+        const mainDisplayContainer = document.getElementById('main-display-container');
+        const plantImage = document.getElementById('plant-image');
+        const plantNameEl = document.getElementById('plant-name');
+        const commonNamesEl = document.getElementById('common-names');
+        const wikiDescriptionEl = document.getElementById('wiki-description');
+        const taxonomyEl = document.getElementById('taxonomy');
+        const synonymsEl = document.getElementById('synonyms');
+        const ediblePartsEl = document.getElementById('edible-parts');
+        const propagationEl = document.getElementById('propagation');
+        const plantUrlEl = document.getElementById('plant-url');
+        const plantBenefitsEl = document.getElementById('plant-benefits');
+        const uploadContainer = document.getElementById('upload-container'); // Needed for drag/drop styling
+
+
+        // --- Drag and Drop ---
+        uploadContainer.addEventListener('dragover', (event) => {
+            event.preventDefault(); // Prevent default behavior (opening image in browser)
+            uploadContainer.classList.add('dragover');
+        });
+
+        uploadContainer.addEventListener('dragleave', () => {
+            uploadContainer.classList.remove('dragover');
+        });
+
+        uploadContainer.addEventListener('drop', (event) => {
+            event.preventDefault(); // Prevent default behavior
+            uploadContainer.classList.remove('dragover');
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                imageUpload.files = files; // Assign dropped file(s) to the input
+                // Optionally trigger recognition immediately or indicate file is ready
+                console.log("File dropped:", files[0].name);
+                 // You could visually indicate the file is loaded in the upload box here
+            }
+        });
+        // --- End Drag and Drop ---
+
+
+        recognizeButton.addEventListener('click', function() {
+            const file = imageUpload.files[0];
+
+            if (file) {
+                // **MODIFICATION: Show loading screen and drone animation**
+                loadingScreen.style.display = 'flex';
+                drone.style.display = 'inline-block';
+                // **MODIFICATION: Hide initial elements immediately**
+                initialInteractionContainer.style.display = 'none';
+
+                // Show loading indicator (optional)
+                // e.g., document.getElementById('loading-spinner').style.display = 'block';
+
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const base64Image = event.target.result.split(',')[1];
+                    getPlantData(base64Image, event.target.result); // Pass original Data URL for preview
+                };
+                reader.readAsDataURL(file);
+            } else {
+                alert('Please select an image file first.');
+            }
+        });
+
+        function getPlantData(base64Image, imageDataUrl) {
+            const apiUrl = 'https://api.plant.id/v2/identify';
+            const apiKey = '4uV8thbKW4ZjwlQ4qhwXc0DGIKYLCsXCpHAGtfWubZOJr5yuHS';
+
+            fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json', // Correct Content-Type for JSON payload
+                    'Api-Key': apiKey,
+                },
+                body: JSON.stringify({
+                    images: [base64Image],
+                    plant_details: ["common_names", "url", "wiki_description", "taxonomy", "synonyms", "edible_parts", "propagation", "watering"], // Added watering as example
+                    // "language": "en" // Optional language preference
+                }),
+            })
+            .then(response => {
+                 if (!response.ok) {
+                     // Handle non-2xx responses
+                     return response.json().then(err => {
+                         throw new Error(`API Error (${response.status}): ${err.message || response.statusText}`);
+                     });
+                 }
+                 return response.json();
+             })
+            .then(data => {
+                console.log("Plant.id API Response:", data); // Log the response
+
+                loadingScreen.style.display = 'none';
+                drone.style.display = 'none';
+
+                if (data.suggestions && data.suggestions.length > 0) {
+                    const suggestion = data.suggestions[0]; // Use the top suggestion
+                    const plantDetails = suggestion.plant_details;
+                    const identifiedPlantName = suggestion.plant_name;
+                    const probability = suggestion.probability;
+
+                    console.log(`Identified: ${identifiedPlantName} (Probability: ${probability})`);
+
+                    // Pass the full Data URL of the uploaded image for display
+                    displayPlantInfo(plantDetails, identifiedPlantName, imageDataUrl);
+                    getPlantBenefits(identifiedPlantName); // Fetch benefits
+
+                    // **MODIFICATION: Show the main display container only AFTER data is ready**
+                    mainDisplayContainer.style.display = 'flex';
+
+                } else {
+                     alert('Could not identify the plant from the image. Please try a clearer picture.');
+                     // **MODIFICATION: Show the initial elements again if identification fails**
+                    
+                    initialInteractionContainer.style.display = 'flex'; // Or 'block' depending on your layout needs
+                    mainDisplayContainer.style.display = 'none'; // Ensure results are hidden
+                }
+            })
+            .catch(error => {
+                console.error('Plant ID Fetch Error:', error);
+                loadingScreen.style.display = 'none';
+                drone.style.display = 'none';
+                // Hide loading indicator (if shown)
+                // e.g., document.getElementById('loading-spinner').style.display = 'none';
+                alert(`An error occurred during plant identification: ${error.message}. Please check the console and try again.`);
+                // **MODIFICATION: Show the initial elements again on error**
+                initialInteractionContainer.style.display = 'flex'; // Or 'block'
+                mainDisplayContainer.style.display = 'none'; // Ensure results are hidden
+            });
+        }
+
+        function displayPlantInfo(plant, plantName, imageDataUrl) {
+             // Display the uploaded image immediately
+             plantImage.src = imageDataUrl; // Use the passed Data URL
+             plantImage.alt = plantName; // Set alt text
+
+            plantNameEl.textContent = plantName || 'N/A'; // Display the identified name
+            commonNamesEl.textContent = 'Common Names: ' + (plant.common_names ? plant.common_names.join(', ') : 'N/A');
+
+            // Handle Wiki Description object
+             if (plant.wiki_description && plant.wiki_description.value) {
+                 wikiDescriptionEl.innerHTML = `<strong>Description:</strong><p>${plant.wiki_description.value}</p>` +
+                                               (plant.wiki_description.citation ? `<small>Source: ${plant.wiki_description.citation}</small>` : '');
+             } else {
+                 wikiDescriptionEl.innerHTML = 'Description: N/A';
+             }
+
+            let taxonomyText = 'Taxonomy:\n';
+            if (plant.taxonomy && typeof plant.taxonomy === 'object') {
+                for (const [key, value] of Object.entries(plant.taxonomy)) {
+                    if (value) { // Only add if value exists
+                         taxonomyText += `  ${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}\n`;
+                    }
+                }
+            } else {
+                taxonomyText += '  N/A';
+            }
+            taxonomyEl.textContent = taxonomyText; // Use textContent for <pre> to preserve spacing
+
+            synonymsEl.textContent = 'Synonyms: ' + (plant.synonyms && plant.synonyms.length > 0 ? plant.synonyms.join(', ') : 'N/A');
+            ediblePartsEl.textContent = 'Edible Parts: ' + (plant.edible_parts && plant.edible_parts.length > 0 ? plant.edible_parts.join(', ') : 'N/A');
+             propagationEl.textContent = 'Propagation Methods: ' + (plant.propagation && plant.propagation.length > 0 ? plant.propagation.join(', ') : 'N/A');
+
+            // Plant URL (link)
+            plantUrlEl.innerHTML = plant.url ? `<a href="${plant.url}" target="_blank">More Info (Plant.id)</a>` : '';
+        }
+
+        function getPlantBenefits(plantName) {
+            // Ensure your Flask server is running at this address and allows CORS
+             const apiUrl = `http://127.0.0.1:5000/get_plant_benefits?plant=${encodeURIComponent(plantName)}`;
+
+            plantBenefitsEl.innerHTML = `<p><i>Fetching medicinal benefits...</i></p>`; // Loading state
+
+            fetch(apiUrl)
+                 .then(response => {
+                     if (!response.ok) {
+                         throw new Error(`Network response was not ok (${response.status})`);
+                     }
+                     // Check content type before parsing
+                     const contentType = response.headers.get("content-type");
+                     if (contentType && contentType.indexOf("application/json") !== -1) {
+                         return response.json(); // Parse as JSON
+                     } else {
+                         return response.text().then(text => { // Get as text first
+                              throw new Error(`Expected JSON, but received ${contentType || 'text'}: ${text.substring(0, 100)}...`);
+                         });
+                     }
+                 })
+                .then(data => {
+                    console.log("Benefits API Response:", data);
+
+                    if (data.benefits && data.benefits.trim() !== "" && !data.benefits.toLowerCase().includes("no information found")) {
+                        // Basic formatting: Replace newlines with <br> for display in HTML
+                        const formattedBenefits = data.benefits.replace(/\n/g, '<br>');
+                        plantBenefitsEl.innerHTML =
+                            `<h3>Medicinal Benefits:</h3><p>${formattedBenefits}</p>`;
+                    } else if (data.error) {
+                         plantBenefitsEl.innerHTML = `<p>Could not retrieve benefits: ${data.error}</p>`;
+                     }
+                    else {
+                        plantBenefitsEl.innerHTML = "<p>No specific medicinal benefits found or listed for this plant.</p>";
+                    }
+                })
+                .catch(error => {
+                    console.error("Fetch Benefits Error:", error);
+                    plantBenefitsEl.innerHTML = `<p>Error fetching medicinal benefits: ${error.message}. Please ensure the benefits server is running correctly.</p>`;
+                });
+        }
+
+        const fileInput = document.getElementById('image-upload');
+        if (fileInput) {
+            try { // Wrap in try...catch in case focus is denied (e.g., in an iframe)
+                 // fileInput.focus(); // Uncomment this line to enable auto-focus
+                 // console.log("Focus set to file input.");
+            } catch (e) {
+                 console.error("Could not set focus to file input:", e);
+            }
+        }
+
+    </script>
+</body>
+</html>

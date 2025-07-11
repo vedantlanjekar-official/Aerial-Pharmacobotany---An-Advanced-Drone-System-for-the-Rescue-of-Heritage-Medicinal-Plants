@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medicinal Plant Benefits</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-image: url(bg.jpg);
+            background-size:contain ;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            transition: background-color 0.3s ease;
+        }
+
+        header {
+            background-color: #4CAF50;
+            color: rgb(0, 0, 0);
+            padding: 1.5em 0;
+            text-align: center;
+            width: 100%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        #upload-container, #result-container {
+            background-color: white;
+            padding: 2.5em;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            margin: 2em;
+            width: 90%;
+            max-width: 900px;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        #upload-container:hover, #result-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        input[type="file"] {
+            margin-bottom: 1.5em;
+            padding: 1em;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 1.2em 2.5em;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            font-size: 1em;
+        }
+
+        button:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+        }
+
+        #plant-image {
+            max-width: 100%;
+            height: auto;
+            margin-top: 1.5em;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #result-container.show {
+            display: block;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @media (max-width: 768px) {
+            #upload-container, #result-container {
+                padding: 1.8em;
+                margin: 1.5em;
+            }
+
+            button {
+                padding: 1em 2em;
+                font-size: 0.9em;
+            }
+
+            input[type="file"] {
+                padding: 0.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Medicinal Plant Benefits</h1>
+    </header>
+
+    <div id="upload-container">
+        <input type="file" id="image-upload" accept="image/*">
+        <button id="recognize-button">Recognize Plant & Get Benefits</button>
+    </div>
+
+    <div id="result-container">
+        <h2 id="plant-name"></h2>
+        <p id="common-names"></p>
+        <p id="wiki-description"></p>
+        <p id="taxonomy"></p>
+        <p id="synonyms"></p>
+        <p id="edible-parts"></p>
+        <p id="propagation"></p>
+        <img id="plant-image" src="" alt="Plant Image">
+        <p id="plant-url"></p>
+        <div id="plant-benefits"></div>
+    </div>
+
+    <script>
+        document.getElementById('recognize-button').addEventListener('click', function() {
+            const fileInput = document.getElementById('image-upload');
+            const file = fileInput.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const base64Image = event.target.result.split(',')[1];
+                    getPlantData(base64Image);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                alert('Please select an image.');
+            }
+        });
+
+        function getPlantData(base64Image) {
+            const apiKey = 'VfppI3egSMpxhqDs8O6JVjcBpcBVL0y6qHHsa007YzrT0AD53F'; // Replace with your API key
+            const apiUrl = 'https://api.plant.id/v2/identify';
+
+            fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/html',
+                    'Api-Key': apiKey,
+                },
+                body: JSON.stringify({
+                    images: [base64Image],
+                    modifiers: ["similar_images"],
+                    plant_details: ["common_names", "url", "wiki_description", "taxonomy", "synonyms", "edible_parts", "propagation", "default_image"],
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.suggestions && data.suggestions.length > 0) {
+                    const plant = data.suggestions[0].plant_details;
+                    const plantName = data.suggestions[0].plant_name;
+                    displayPlantInfo(plant, plantName);
+                    getPlantBenefits(plantName);
+                } else {
+                    alert('Plant not identified.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        }
+
+        function displayPlantInfo(plant, plantName) {
+    document.getElementById('plant-name').textContent = 'Plant Name: ' + plantName;
+    document.getElementById('common-names').textContent = 'Common Names: ' + (plant.common_names ? plant.common_names.join(', ') : 'N/A');
+    document.getElementById('wiki-description').textContent = 'Wiki Description: ' + (plant.wiki_description ? plant.wiki_description.value : 'N/A');
+    let taxonomyText = 'Taxonomy:\n';
+    if (plant.taxonomy) {
+        for (const [key, value] of Object.entries(plant.taxonomy)) {
+            taxonomyText += `- ${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}\n`;
+        }
+    } else {
+        taxonomyText += 'N/A';
+    }
+    document.getElementById('taxonomy').textContent = taxonomyText;
+    document.getElementById('synonyms').textContent = 'Synonyms: ' + (plant.synonyms ? plant.synonyms.join(', ') : 'N/A');
+    document.getElementById('edible-parts').textContent = 'Edible Parts: ' + (plant.edible_parts ? plant.edible_parts.join(', ') : 'N/A');
+    document.getElementById('propagation').textContent = 'Propagation: ' + (plant.propagation ? plant.propagation.join(', ') : 'N/A');
+    // Use uploaded image if available, else use API image
+    const fileInput = document.getElementById('image-upload');
+    const file = fileInput.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            document.getElementById('plant-image').src = event.target.result; // Display uploaded image
+        };
+        reader.readAsDataURL(file);
+    } else {
+        document.getElementById('plant-image').src = plant.default_image ? plant.default_image.url : ''; // Use API image if available
+    }
+    document.getElementById('plant-url').innerHTML = plant.url ? `<a href="${plant.url}" target="_blank">More Info</a>` : '';
+    document.getElementById('result-container').classList.add('show');
+}
+
+        function getPlantBenefits(plantName) {
+            const apiUrl = "http://127.0.0.1:5000/get_plant_benefits?plant=" + encodeURIComponent(plantName);
+
+            fetch(apiUrl)
+                .then(response => response.text()) // First, get raw text response
+                .then(text => {
+                    console.log("🔹 Raw API Response:", text); // Log raw response for debugging
+
+                    try {
+                        const data = JSON.parse(text); // Try parsing it as JSON
+                        console.log("Parsed JSON:", data); // Log parsed JSON
+
+                        if (data.benefits) {
+                            document.getElementById('plant-benefits').innerHTML = 
+                                `<h3>Medicinal Benefits of ${plantName}:</h3><p>${data.benefits}</p>`;
+                        } else {
+                            document.getElementById('plant-benefits').innerHTML = 
+                                "<p>No medicinal benefits found.</p>";
+                        }
+                    } catch (error) {
+                        console.error("JSON Parsing Error:", error, "\nResponse Received:", text);
+                        alert("Error: Invalid data received. Check console for details.");
+                        document.getElementById('plant-benefits').innerHTML = "<p>Error retrieving data. Please try again.</p>";
+                    }
+                })
+                .catch(error => {
+                    console.error("Fetch Error:", error);
+                    alert("Error: Could not fetch data. Check console for details.");
+                });
+        }
+
+    </script>
+</body>
+</html>
